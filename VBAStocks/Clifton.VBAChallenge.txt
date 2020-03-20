@@ -1,0 +1,124 @@
+Sub stonks()
+
+'add this because of overflow issue
+On Error Resume Next
+
+'loop through each worksheet
+For Each ws In Worksheets
+
+'Loop through all the stocks for one year and output the following information
+'The ticker symbol.
+'Yearly change from opening price at the beginning of a given year to the closing price at the end of that year.
+'The percent change from opening price at the beginning of a given year to the closing price at the end of that year.
+'The total stock volume of the stock.
+'You should also have conditional formatting that will highlight positive change in green and negative change in red.
+
+'set output row = 1 (this is where we're gonna put the information for each ticker
+output_row = 2
+ws.Range("I1") = "Ticker Symbol"
+ws.Range("J1") = "Yearly Change"
+ws.Range("K1") = "Percent Change"
+ws.Range("L1") = "Total Volume"
+
+ws.Range("N2") = "Greatest % Increase"
+ws.Range("N3") = "Greatest % Decrease"
+ws.Range("N4") = "Greatest Total Volume"
+
+ws.Range("O1") = "Ticker"
+ws.Range("P1") = "Value"
+
+
+Dim tickersymbol As String
+Dim yearlychange As Double
+Dim percentchange As Double
+Dim totvolume As Double
+totvolume = 0
+Dim openprice As Double
+'set the opening price of our first ticker
+openprice = ws.Cells(2, 3)
+
+
+'loop through column A to identify where the ticker symbol changes
+lastrow = ws.Cells(Rows.Count, 1).End(xlUp).Row
+
+
+For i = 2 To lastrow:
+    If ws.Cells(i, 1) <> ws.Cells(i + 1, 1) Then
+        'extract the ticker symbol
+        tickersymbol = ws.Cells(i, 1).Value
+        'place the ticker symbol where I want it
+        ws.Cells(output_row, 9) = tickersymbol
+        'calculate the total change (from opening price at beginning to closing price at end)
+        closeprice = ws.Cells(i, 6)
+        yearlychange = openprice - closeprice
+        ws.Cells(output_row, 10) = yearlychange
+        
+        'let's loop through the yearlychange cell with a conditional if to fill in either red or green
+        If ws.Cells(output_row, 10) > 0 Then
+            ws.Cells(output_row, 10).Interior.ColorIndex = 4 'green
+        Else
+            ws.Cells(output_row, 10).Interior.ColorIndex = 3 'red
+        End If
+        
+        'calculate percentchange from openprice to closeprice
+        percentchange = ((closeprice - openprice) / openprice)
+        ws.Cells(output_row, 11) = percentchange
+        'HOW DO I FORMAT THIS CELL TO SHOW AS A PERCENTAGE??
+        'maybe like..
+        ws.Cells(output_row, 11).Style = "Percent"
+        'add up totvolume
+        totvolume = totvolume + ws.Cells(i, 7)
+        ws.Cells(output_row, 12) = totvolume
+        
+        
+
+        'Reset our openingprice, yearlychange, percentchange, and totvolume
+        openprice = ws.Cells(i + 1, 3)
+        yearlychange = 0
+        percentchange = 0
+        totvolume = 0
+        'set output_row to the next row
+        output_row = output_row + 1
+    Else
+        'What do we do if the cells do match? add to the totvolume
+        totvolume = totvolume + ws.Cells(i, 7).Value
+    End If
+Next i
+
+'So now we've looped through all the ticker symbols.. but we need to determine the ticker corresponding
+'to the greatest % increase, greatest % decrease, and greatest total volume
+max_increase = 0
+max_decrease = 0
+max_volume = 0
+
+last_output_row = ws.Cells(Rows.Count, 9).End(xlUp).Row
+For j = 2 To last_output_row:
+    If (ws.Cells(j, 11) > ws.Cells(j + 1, 11) And ws.Cells(j, 11) > max_increase) Then
+        max_increase = ws.Cells(j, 11)
+        max_increase_ticker = ws.Cells(j, 9)
+        ws.Range("O2") = max_increase_ticker
+        ws.Range("P2") = max_increase
+        ws.Range("P2").Style = "Percent"
+    ElseIf (ws.Cells(j, 11) < ws.Cells(j + 1, 11) And ws.Cells(j, 11) < max_decrease) Then
+        max_decrease = ws.Cells(j, 11)
+        max_decrease_ticker = ws.Cells(j, 9)
+        ws.Range("O3") = max_decrease_ticker
+        ws.Range("P3") = max_decrease
+        ws.Range("P3").Style = "Percent"
+    End If
+    
+    'now do if statement for greatest total volume (i didn't include it in the if statment above
+    'because i thought the conditions of the if statment above would always be satisfied (unless
+    'they equaled) so thus we would never actually get to the "greatest total volume" part of the
+    'conditional
+    If (ws.Cells(j, 12) > ws.Cells(j + 1, 12) And ws.Cells(j, 12) > max_volume) Then
+        max_volume = ws.Cells(j, 12)
+        max_volume_ticker = ws.Cells(j, 9)
+        ws.Range("O4") = max_volume_ticker
+        ws.Range("P4") = max_volume
+    End If
+Next j
+
+Next ws
+
+End Sub
